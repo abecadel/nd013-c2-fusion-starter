@@ -18,6 +18,8 @@ import torch
 # add project directory to python path to enable relative imports
 import os
 import sys
+import zlib
+
 PACKAGE_PARENT = '..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
@@ -59,18 +61,29 @@ def show_range_image(frame, lidar_name):
     print("student task ID_S1_EX1")
 
     # step 1 : extract lidar data and range image for the roof-mounted lidar
-    
     # step 2 : extract the range and the intensity channel from the range image
-    
+    lidar = [obj for obj in frame.lasers if obj.name == lidar_name][0]
+    if len(lidar.ri_return1.range_image_compressed) > 0:  # use first response
+        ri = dataset_pb2.MatrixFloat()
+        ri.ParseFromString(zlib.decompress(lidar.ri_return1.range_image_compressed))
+        ri = np.array(ri.data).reshape(ri.shape.dims)
+
     # step 3 : set values <0 to zero
-    
+    ri[ri < 0] = 0.0
+
     # step 4 : map the range channel onto an 8-bit scale and make sure that the full range of values is appropriately considered
-    
+    lrange = ri[:, :, 0]
+    lrange = lrange * 255 / (np.amax(lrange) - np.amin(lrange))
+    lrange = lrange.astype(np.uint8)
+
     # step 5 : map the intensity channel onto an 8-bit scale and normalize with the difference between the 1- and 99-percentile to mitigate the influence of outliers
-    
+    intensity = ri[:, :, 1]
+    intensity = intensity * 255 / (np.percentile(intensity, 99) - np.percentile(intensity, 1))
+    intensity = intensity.astype(np.uint8)
+
     # step 6 : stack the range and intensity image vertically using np.vstack and convert the result to an unsigned 8-bit integer
     
-    img_range_intensity = [] # remove after implementing all steps
+    img_range_intensity = np.vstack([lrange, intensity])
     #######
     ####### ID_S1_EX1 END #######     
     
