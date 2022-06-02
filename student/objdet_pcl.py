@@ -30,33 +30,42 @@ from tools.waymo_reader.simple_waymo_open_dataset_reader import dataset_pb2, lab
 
 # object detection tools and helper functions
 import misc.objdet_tools as tools
+import open3d as o3d
 
 
 # visualize lidar point-cloud
 def show_pcl(pcl):
-
-    ####### ID_S1_EX2 START #######     
+    ####### ID_S1_EX2 START #######
     #######
     print("student task ID_S1_EX2")
 
     # step 1 : initialize open3d with key callback and create window
-    
+    def right_cb(o):
+        o.close()
+
+    vis = o3d.visualization.VisualizerWithKeyCallback()
+    vis.register_key_callback(262, right_cb)
+    vis.create_window(width=800, height=600)
+
     # step 2 : create instance of open3d point-cloud class
+    pcd = o3d.geometry.PointCloud()
 
     # step 3 : set points in pcd instance by converting the point-cloud into 3d vectors (using open3d function Vector3dVector)
+    pcd.points = o3d.utility.Vector3dVector(pcl[:, [0, 1, 2]])
 
     # step 4 : for the first frame, add the pcd instance to visualization using add_geometry; for all other frames, use update_geometry instead
-    
+    vis.add_geometry(pcd)
+
     # step 5 : visualize point cloud and keep window open until right-arrow is pressed (key-code 262)
+    vis.run()
 
     #######
     ####### ID_S1_EX2 END #######     
-       
+
 
 # visualize range image
 def show_range_image(frame, lidar_name):
-
-    ####### ID_S1_EX1 START #######     
+    ####### ID_S1_EX1 START #######
     #######
     print("student task ID_S1_EX1")
 
@@ -82,25 +91,24 @@ def show_range_image(frame, lidar_name):
     intensity = intensity.astype(np.uint8)
 
     # step 6 : stack the range and intensity image vertically using np.vstack and convert the result to an unsigned 8-bit integer
-    
+
     img_range_intensity = np.vstack([lrange, intensity])
     #######
     ####### ID_S1_EX1 END #######     
-    
+
     return img_range_intensity
 
 
 # create birds-eye view of lidar data
 def bev_from_pcl(lidar_pcl, configs):
-
     # remove lidar points outside detection area and with too low reflectivity
     mask = np.where((lidar_pcl[:, 0] >= configs.lim_x[0]) & (lidar_pcl[:, 0] <= configs.lim_x[1]) &
                     (lidar_pcl[:, 1] >= configs.lim_y[0]) & (lidar_pcl[:, 1] <= configs.lim_y[1]) &
                     (lidar_pcl[:, 2] >= configs.lim_z[0]) & (lidar_pcl[:, 2] <= configs.lim_z[1]))
     lidar_pcl = lidar_pcl[mask]
-    
+
     # shift level of ground plane to avoid flipping from 0 to 255 for neighboring pixels
-    lidar_pcl[:, 2] = lidar_pcl[:, 2] - configs.lim_z[0]  
+    lidar_pcl[:, 2] = lidar_pcl[:, 2] - configs.lim_z[0]
 
     # convert sensor coordinates to bev-map coordinates (center is bottom-middle)
     ####### ID_S2_EX1 START #######     
@@ -114,11 +122,10 @@ def bev_from_pcl(lidar_pcl, configs):
     # step 3 : perform the same operation as in step 2 for the y-coordinates but make sure that no negative bev-coordinates occur
 
     # step 4 : visualize point-cloud using the function show_pcl from a previous task
-    
+
     #######
     ####### ID_S2_EX1 END #######     
-    
-    
+
     # Compute intensity layer of the BEV map
     ####### ID_S2_EX2 START #######     
     #######
@@ -139,7 +146,6 @@ def bev_from_pcl(lidar_pcl, configs):
 
     #######
     ####### ID_S2_EX2 END ####### 
-
 
     # Compute height layer of the BEV map
     ####### ID_S2_EX3 START #######     
@@ -166,9 +172,9 @@ def bev_from_pcl(lidar_pcl, configs):
     # Compute density layer of the BEV map
     density_map = np.zeros((configs.bev_height + 1, configs.bev_width + 1))
     _, _, counts = np.unique(lidar_pcl_cpy[:, 0:2], axis=0, return_index=True, return_counts=True)
-    normalizedCounts = np.minimum(1.0, np.log(counts + 1) / np.log(64)) 
+    normalizedCounts = np.minimum(1.0, np.log(counts + 1) / np.log(64))
     density_map[np.int_(lidar_pcl_top[:, 0]), np.int_(lidar_pcl_top[:, 1])] = normalizedCounts
-        
+
     # assemble 3-channel bev-map from individual maps
     bev_map = np.zeros((3, configs.bev_height, configs.bev_width))
     bev_map[2, :, :] = density_map[:configs.bev_height, :configs.bev_width]  # r_map
@@ -183,5 +189,3 @@ def bev_from_pcl(lidar_pcl, configs):
     bev_maps = torch.from_numpy(bev_maps)  # create tensor from birds-eye view
     input_bev_maps = bev_maps.to(configs.device, non_blocking=True).float()
     return input_bev_maps
-
-
