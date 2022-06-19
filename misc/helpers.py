@@ -23,7 +23,7 @@ def save_object_to_file(object, file_path, base_filename, object_name, frame_id=
 
 ## Loads an object from a binary file
 def load_object_from_file(file_path, base_filename, object_name, frame_id=1):
-    object_filename = os.path.join(file_path, os.path.splitext(base_filename)[0]
+    object_filename = os.path.join(file_path, os.path.splitext(base_filename.split("/")[-1])[0]
                                    + "__frame-" + str(frame_id) + "__" + object_name + ".pkl")
     with open(object_filename, 'rb') as f:
         object = pickle.load(f)

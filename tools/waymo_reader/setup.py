@@ -3,5 +3,5 @@ from setuptools import setup
 setup(
         name="simple_waymo_open_dataset_reader",
         packages=['simple_waymo_open_dataset_reader'],
-        install_requires=['protobuf==3.20'])
+        install_requires=['protobuf==3.20.1'])
 

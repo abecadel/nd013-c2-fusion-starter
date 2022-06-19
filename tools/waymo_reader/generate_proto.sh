@@ -1,5 +1,5 @@
 #!/bin/sh
 
-protoc -I=. --python_out=. simple_waymo_open_dataset_reader/label.proto
-protoc -I=. --python_out=. simple_waymo_open_dataset_reader/dataset.proto
+/home/michal/bin/bin/protoc -I=. --python_out=. simple_waymo_open_dataset_reader/label.proto
+/home/michal/bin/bin/protoc -I=. --python_out=. simple_waymo_open_dataset_reader/dataset.proto
 
